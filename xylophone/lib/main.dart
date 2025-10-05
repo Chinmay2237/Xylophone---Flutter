@@ -3,26 +3,13 @@ import 'package:audioplayers/audioplayers.dart';
 
 void main() => runApp(XylophoneApp());
 
-class XylophoneApp extends StatelessWidget {
+class XylophoneApp extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Xylophone',
-      theme: ThemeData.dark(),
-      home: XylophoneScreen(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
+  _XylophoneAppState createState() => _XylophoneAppState();
 }
 
-class XylophoneScreen extends StatefulWidget {
-  @override
-  _XylophoneScreenState createState() => _XylophoneScreenState();
-}
-
-class _XylophoneScreenState extends State<XylophoneScreen> {
+class _XylophoneAppState extends State<XylophoneApp> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final AudioCache _audioCache = AudioCache(prefix: 'assets/');
   final List<Note> _notes = [
     Note(color: Colors.red, soundNumber: 1, name: 'C'),
     Note(color: Colors.orange, soundNumber: 2, name: 'D'),
@@ -33,35 +20,12 @@ class _XylophoneScreenState extends State<XylophoneScreen> {
     Note(color: Colors.purple, soundNumber: 7, name: 'B'),
   ];
 
-  bool _isPlaying = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _preloadSounds();
-  }
-
-  Future<void> _preloadSounds() async {
-    for (final note in _notes) {
-      await _audioCache.load('note${note.soundNumber}.wav');
-    }
-  }
-
   Future<void> _playSound(int soundNumber) async {
-    if (_isPlaying) return;
-    
-    setState(() {
-      _isPlaying = true;
-    });
-
     try {
-      await _audioCache.play('note$soundNumber.wav');
+      await _audioPlayer.stop(); // Stop any currently playing sound
+      await _audioPlayer.play(AssetSource('note$soundNumber.wav'));
     } catch (e) {
       print('Error playing sound: $e');
-    } finally {
-      setState(() {
-        _isPlaying = false;
-      });
     }
   }
 
@@ -116,60 +80,45 @@ class _XylophoneScreenState extends State<XylophoneScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text('Xylophone'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(8.0),
+    return MaterialApp(
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: Text('Xylophone'),
+          centerTitle: true,
+          backgroundColor: Colors.black,
+        ),
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: 20),
+              Icon(
+                Icons.music_note,
+                size: 50,
+                color: Colors.white54,
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Tap the keys to play!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 20),
+              Expanded(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Icon(
-                      Icons.music_note,
-                      size: 50,
-                      color: Colors.white54,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Tap the keys to play!',
-                      style: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 16,
-                      ),
-                    ),
+                    for (int i = 0; i < _notes.length; i++)
+                      _buildKey(_notes[i], i),
                   ],
                 ),
               ),
-            ),
-            Expanded(
-              flex: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (int i = 0; i < _notes.length; i++)
-                    _buildKey(_notes[i], i),
-                ],
-              ),
-            ),
-            if (_isPlaying)
-              Padding(
-                padding: EdgeInsets.all(16.0),
-                child: LinearProgressIndicator(
-                  backgroundColor: Colors.white24,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
